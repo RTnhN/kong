@@ -6,10 +6,17 @@
   <title>Kong</title>
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; background: #fff; color: #222; }
-    #text {
+    body {
+      margin: 0;
       min-height: 100vh;
       min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      color: #222;
+    }
+    #text {
+      flex: 1;
       padding: 5rem clamp(1.25rem, 5vw, 5rem) 3rem;
       border: 0;
       outline: none;
@@ -33,11 +40,27 @@
     }
     #mode:hover { background: #f5f5f5; }
     #mode:focus-visible { outline: 2px solid #555; outline-offset: 3px; }
+    footer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: .5rem 1.25rem;
+      padding: 1rem 1.25rem;
+      color: #777;
+      font: 1rem system-ui, sans-serif;
+    }
+    footer a { color: inherit; text-underline-offset: .2em; }
+    footer a:hover { color: #222; }
   </style>
 </head>
 <body>
   <button id="mode" type="button" aria-pressed="false" title="Current mode: Read. Click to toggle; hold Ctrl to edit, release to read.">Read</button>
   <main id="text" contenteditable="false" role="textbox" aria-label="Text" aria-multiline="true" aria-readonly="true" spellcheck="false"></main>
+  <footer>
+    <a href="https://github.com/RTnhN/kong" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <span>Made with <span id="object-emoji" role="img" aria-label="a kite">🪁</span> in <span id="place-emoji" role="img" aria-label="the United States">🇺🇸</span></span>
+  </footer>
   <script>
     'use strict';
     const editor = document.getElementById('text');
@@ -45,6 +68,87 @@
     const storageKey = 'kong.text';
     let editing = false;
     let ctrlHeld = false;
+
+    const objects = [
+      ['🪁', 'a kite'], ['🧸', 'a teddy bear'], ['🎸', 'a guitar'],
+      ['📚', 'books'], ['🧩', 'a puzzle piece'], ['🔭', 'a telescope'],
+      ['🖌️', 'a paintbrush'], ['💡', 'a light bulb'], ['🧶', 'yarn'],
+      ['☂️', 'an umbrella'], ['🛠️', 'tools'], ['📷', 'a camera'],
+      ['🚽', 'a toilet'], ['☕', 'a cup of coffee'], ['🥢', 'chopsticks'],
+      ['🪠', 'a plunger'], ['🧻', 'a roll of toilet paper'], ['🧽', 'a sponge'],
+      ['🪥', 'a toothbrush'], ['🧼', 'soap'], ['🛁', 'a bathtub'],
+      ['🪣', 'a bucket'], ['🧹', 'a broom'], ['🧴', 'a lotion bottle'],
+      ['🦷', 'a tooth'], ['🦴', 'a bone'], ['🧠', 'a brain'],
+      ['🦠', 'a microbe'], ['🧬', 'DNA'], ['🧪', 'a test tube'],
+      ['🧫', 'a petri dish'], ['🔬', 'a microscope'], ['⚗️', 'an alembic'],
+      ['🧲', 'a magnet'], ['🧯', 'a fire extinguisher'], ['🪤', 'a mouse trap'],
+      ['🧱', 'a brick'], ['🪜', 'a ladder'], ['🪚', 'a saw'],
+      ['🔩', 'a nut and bolt'], ['🪛', 'a screwdriver'], ['🔧', 'a wrench'],
+      ['⚙️', 'a gear'], ['⛓️', 'chains'], ['🪝', 'a hook'],
+      ['🧵', 'thread'], ['🪡', 'a sewing needle'], ['🧷', 'a safety pin'],
+      ['✂️', 'scissors'], ['📎', 'a paperclip'], ['📏', 'a ruler'],
+      ['🖇️', 'linked paperclips'], ['🗜️', 'a clamp'], ['🗑️', 'a wastebasket'],
+      ['🪑', 'a chair'], ['🛋️', 'a couch'], ['🛏️', 'a bed'],
+      ['🪞', 'a mirror'], ['🪟', 'a window'], ['🚪', 'a door'],
+      ['🗝️', 'an old key'], ['🔒', 'a lock'], ['🧳', 'a suitcase'],
+      ['🛒', 'a shopping cart'], ['📦', 'a package'], ['📫', 'a mailbox'],
+      ['📠', 'a fax machine'], ['📟', 'a pager'], ['☎️', 'a telephone'],
+      ['💾', 'a floppy disk'], ['💿', 'a CD'], ['📼', 'a videotape'],
+      ['📺', 'a television'], ['📻', 'a radio'], ['🕹️', 'a joystick'],
+      ['🔋', 'a battery'], ['🔌', 'a plug'], ['🛰️', 'a satellite'],
+      ['🚀', 'a rocket'], ['🛸', 'a flying saucer'], ['🛶', 'a canoe'],
+      ['🛼', 'a roller skate'], ['🛹', 'a skateboard'], ['🛷', 'a sled'],
+      ['🛟', 'a life ring'], ['⚓', 'an anchor'], ['🧭', 'a compass'],
+      ['🪐', 'a ringed planet'], ['🪨', 'a rock'], ['🪵', 'a log'],
+      ['🪸', 'coral'], ['🐚', 'a seashell'], ['🪶', 'a feather'],
+      ['🍄', 'a mushroom'], ['🌵', 'a cactus'], ['🥔', 'a potato'],
+      ['🥒', 'a cucumber'], ['🍆', 'an eggplant'], ['🧄', 'garlic'],
+      ['🧅', 'an onion'], ['🥥', 'a coconut'], ['🍍', 'a pineapple'],
+      ['🧀', 'cheese'], ['🥨', 'a pretzel'], ['🧇', 'a waffle'],
+      ['🥟', 'a dumpling'], ['🍣', 'sushi'], ['🍜', 'noodles'],
+      ['🌮', 'a taco'], ['🍕', 'pizza'], ['🍿', 'popcorn'],
+      ['🍩', 'a doughnut'], ['🍪', 'a cookie'], ['🥠', 'a fortune cookie'],
+      ['🧋', 'bubble tea'], ['🫖', 'a teapot'], ['🧃', 'a juice box'],
+      ['🧊', 'an ice cube'], ['🧂', 'salt'], ['🥄', 'a spoon'],
+      ['🍴', 'a fork and knife'], ['🥣', 'a bowl'], ['🫙', 'a jar'],
+      ['🍼', 'a baby bottle'], ['🎈', 'a balloon'], ['🪅', 'a piñata'],
+      ['🪩', 'a disco ball'], ['🎊', 'confetti'], ['🎁', 'a gift'],
+      ['🎲', 'a die'], ['🎱', 'a pool ball'], ['🪀', 'a yo-yo'],
+      ['🃏', 'a joker card'], ['🀄', 'a mahjong tile'], ['♟️', 'a chess pawn'],
+      ['🪄', 'a magic wand'], ['🔮', 'a crystal ball'], ['🧿', 'a nazar amulet'],
+      ['🪬', 'a hamsa'], ['🗿', 'a moai statue'], ['🎃', 'a jack-o-lantern'],
+      ['🎭', 'theater masks'], ['👑', 'a crown'], ['🎩', 'a top hat'],
+      ['🩴', 'a flip-flop'], ['🧦', 'socks'], ['🥽', 'goggles'],
+      ['🪖', 'a helmet'], ['🪭', 'a folding fan'], ['🪮', 'a hair pick'],
+      ['🪗', 'an accordion'], ['🪕', 'a banjo'], ['🪘', 'a drum'],
+      ['🎺', 'a trumpet'], ['🎷', 'a saxophone'], ['🎻', 'a violin'],
+      ['🛎️', 'a bell'], ['📯', 'a postal horn'], ['⏰', 'an alarm clock'],
+      ['⌛', 'an hourglass'], ['⚖️', 'a balance scale'], ['🕯️', 'a candle'],
+      ['🪔', 'an oil lamp'], ['🏺', 'an amphora'], ['⚱️', 'an urn'],
+      ['⚰️', 'a coffin'], ['🪦', 'a headstone'], ['🧨', 'a firecracker']
+    ];
+    const countries = [
+      ['🇺🇸', 'the United States'], ['🇨🇦', 'Canada'], ['🇲🇽', 'Mexico'],
+      ['🇧🇷', 'Brazil'], ['🇦🇷', 'Argentina'], ['🇬🇧', 'the United Kingdom'],
+      ['🇫🇷', 'France'], ['🇩🇪', 'Germany'], ['🇮🇹', 'Italy'],
+      ['🇪🇸', 'Spain'], ['🇸🇪', 'Sweden'], ['🇬🇷', 'Greece'],
+      ['🇯🇵', 'Japan'], ['🇨🇳', 'China'], ['🇰🇷', 'South Korea'],
+      ['🇮🇳', 'India'], ['🇹🇭', 'Thailand'], ['🇻🇳', 'Vietnam'],
+      ['🇰🇪', 'Kenya'], ['🇿🇦', 'South Africa'], ['🇪🇬', 'Egypt'],
+      ['🇳🇬', 'Nigeria'], ['🇦🇺', 'Australia'], ['🇳🇿', 'New Zealand']
+    ];
+    function randomEmoji(id, choices) {
+      const element = document.getElementById(id);
+      const alternatives = choices.filter(([emoji]) => emoji !== element.textContent);
+      const [emoji, label] = alternatives[Math.floor(Math.random() * alternatives.length)];
+      element.textContent = emoji;
+      element.setAttribute('aria-label', label);
+    }
+    function randomizeFooter() {
+      randomEmoji('object-emoji', objects);
+      randomEmoji('place-emoji', countries);
+    }
+    randomizeFooter();
 
     // plaintext-only keeps pasted content as text and preserves native undo.
     // innerText includes line breaks created by contenteditable's block nodes.
@@ -81,6 +185,7 @@
 
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Control') {
+        if (!event.repeat) randomizeFooter();
         ctrlHeld = true;
         setMode(true);
       }
