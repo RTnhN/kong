@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kong</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #fff; color: #222; }
+    #text {
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: 5rem clamp(1.25rem, 5vw, 5rem) 3rem;
+      border: 0;
+      outline: none;
+      font-family: system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: clamp(1.125rem, 2vw, 1.5rem);
+      line-height: 1.8;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    #mode {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      padding: .45rem .85rem;
+      border: 1px solid #ddd;
+      border-radius: .4rem;
+      background: #fff;
+      color: #444;
+      font:  .875rem system-ui, sans-serif;
+      cursor: pointer;
+    }
+    #mode:hover { background: #f5f5f5; }
+    #mode:focus-visible { outline: 2px solid #555; outline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <button id="mode" type="button" aria-pressed="false" title="Current mode: Read. Click to toggle; hold Ctrl to edit, release to read.">Read</button>
+  <main id="text" contenteditable="false" role="textbox" aria-label="Text" aria-multiline="true" aria-readonly="true" spellcheck="false"></main>
+  <script>
+    'use strict';
+    const editor = document.getElementById('text');
+    const button = document.getElementById('mode');
+    const storageKey = 'kong.text';
+    let editing = false;
+    let ctrlHeld = false;
+
+    // plaintext-only keeps pasted content as text and preserves native undo.
+    // innerText includes line breaks created by contenteditable's block nodes.
+    function save() {
+      try {
+        localStorage.setItem(storageKey, editor.innerText);
+      } catch (error) {
+        // Keep the document usable if browser storage is disabled or full.
+        console.warn('Kong could not save text to localStorage.', error);
+      }
+    }
+
+    try {
+      editor.textContent = localStorage.getItem(storageKey) ?? '';
+    } catch (error) {
+      console.warn('Kong could not restore text from localStorage.', error);
+    }
+
+    function setMode(nextEditing) {
+      if (editing === nextEditing) return;
+      save();
+      editing = nextEditing;
+      editor.contentEditable = editing ? 'plaintext-only' : 'false';
+      editor.setAttribute('aria-readonly', String(!editing));
+      button.textContent = editing ? 'Edit' : 'Read';
+      button.setAttribute('aria-pressed', String(editing));
+      button.title = `Current mode: ${button.textContent}. Click to toggle; hold Ctrl to edit, release to read.`;
+      if (editing) editor.focus();
+      else editor.blur();
+    }
+
+    editor.addEventListener('input', save);
+    button.addEventListener('click', () => setMode(!editing));
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Control') {
+        ctrlHeld = true;
+        setMode(true);
+      }
+    });
+    document.addEventListener('keyup', (event) => {
+      if (event.key !== 'Control') return;
+      // Stay in Edit if the other Ctrl key is still held.
+      ctrlHeld = event.ctrlKey;
+      setMode(ctrlHeld);
+    });
+    // A release outside the window may not deliver keyup to this page.
+    window.addEventListener('blur', () => {
+      if (ctrlHeld) {
+        ctrlHeld = false;
+        setMode(false);
+      }
+    });
+  </script>
+</body>
+</html>
