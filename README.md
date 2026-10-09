@@ -2,8 +2,9 @@
 
 A browser-local Markdown editor and reader. Open `index.html` in Read
 mode. Hold Ctrl to edit or paste with Ctrl+V; release Ctrl to return to Read.
-Double-tap Ctrl within half a second to stay in Edit after releasing it. A single
-Ctrl tap returns to Read. Shortcuts and Ctrl+wheel do not count as taps.
+A single Ctrl tap returns to Read.
+Ctrl+A selects all text and keeps Edit mode on after Ctrl is released, so you can
+type to replace the selection. Tap Ctrl again or use the button to return to Read.
 The upper-right button toggles editing on or off without holding a key. The next
 Ctrl press takes over, and releasing it resets the button to Read.
 The button shows the current mode. Text saves automatically under

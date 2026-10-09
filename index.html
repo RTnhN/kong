@@ -65,7 +65,7 @@
   </style>
 </head>
 <body>
-  <button id="mode" type="button" aria-pressed="false" title="Current mode: Read. Click to toggle; hold Ctrl to edit, or double-tap Ctrl to stay in Edit.">Read</button>
+  <button id="mode" type="button" aria-pressed="false" title="Current mode: Read. Click to toggle; hold Ctrl to edit, or use Ctrl+A to stay in Edit.">Read</button>
   <main id="text" hidden contenteditable="false" role="textbox" aria-label="Markdown text" aria-multiline="true" aria-readonly="true" spellcheck="false"></main>
   <main id="reading" aria-label="Rendered text"></main>
   <footer>
@@ -81,8 +81,7 @@
     const storageKey = 'kong.text';
     let editing = false;
     let ctrlHeld = false;
-    let ctrlPressedAt = null;
-    let lastCtrlTap = null;
+    let keepEditingOnRelease = false;
     let sourceText = '';
 
     const objects = [
@@ -206,7 +205,7 @@
       editor.setAttribute('aria-readonly', String(!editing));
       button.textContent = editing ? 'Edit' : 'Read';
       button.setAttribute('aria-pressed', String(editing));
-      button.title = `Current mode: ${button.textContent}. Click to toggle; hold Ctrl to edit, or double-tap Ctrl to stay in Edit.`;
+      button.title = `Current mode: ${button.textContent}. Click to toggle; hold Ctrl to edit, or use Ctrl+A to stay in Edit.`;
       if (editing) editor.focus({ preventScroll: true });
       else editor.blur();
       window.scrollTo({ left: scrollX, top: scrollY, behavior: 'instant' });
@@ -214,44 +213,34 @@
 
     editor.addEventListener('input', save);
     button.addEventListener('click', () => {
-      lastCtrlTap = null;
       setMode(!editing);
     });
 
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Control') {
         if (!event.repeat) {
+          if (!ctrlHeld) keepEditingOnRelease = false;
           randomizeFooter();
-          ctrlPressedAt = ctrlHeld || event.altKey || event.shiftKey || event.metaKey ? null : performance.now();
         }
         ctrlHeld = true;
         setMode(true);
       } else {
-        // Shortcuts are not standalone taps, even when used close together.
-        ctrlPressedAt = null;
-        lastCtrlTap = null;
+        if (event.ctrlKey && event.key.toLowerCase() === 'a' && !event.altKey && !event.metaKey) {
+          keepEditingOnRelease = true;
+          setMode(true);
+        }
       }
     });
     document.addEventListener('keyup', (event) => {
       if (event.key !== 'Control') return;
       // Stay in Edit if the other Ctrl key is still held.
       ctrlHeld = event.ctrlKey;
-      if (ctrlHeld) {
-        ctrlPressedAt = null;
-        lastCtrlTap = null;
-        return;
-      }
-      const now = performance.now();
-      const tapped = ctrlPressedAt !== null && now - ctrlPressedAt <= 1000;
-      const doubleTapped = tapped && lastCtrlTap !== null && now - lastCtrlTap <= 500;
-      lastCtrlTap = tapped && !doubleTapped ? now : null;
-      ctrlPressedAt = null;
-      setMode(doubleTapped);
+      if (ctrlHeld) return;
+      setMode(keepEditingOnRelease);
+      keepEditingOnRelease = false;
     });
     document.addEventListener('wheel', (event) => {
       if (!event.ctrlKey) return;
-      ctrlPressedAt = null;
-      lastCtrlTap = null;
       event.preventDefault();
       // Wheel deltas can be expressed in pixels, lines, or pages.
       const lineHeight = parseFloat(getComputedStyle(editing ? editor : reading).lineHeight);
@@ -264,8 +253,7 @@
     }, { passive: false });
     // A release outside the window may not deliver keyup to this page.
     window.addEventListener('blur', () => {
-      ctrlPressedAt = null;
-      lastCtrlTap = null;
+      keepEditingOnRelease = false;
       if (ctrlHeld) {
         ctrlHeld = false;
         setMode(false);
